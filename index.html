@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>BOURSSATY</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#FCFAF3;
+    --surface:#FFFFFF;
+    --surface2:#F6F1E3;
+    --surface3:#EEE6CF;
+    --border:#E3D9BC;
+    --text:#3A331F;
+    --text-dim:#7A705A;
+    --text-faint:#A69C82;
+    --gold:#B8842E;
+    --gold-dim:#E6C077;
+    --green:#1E9E6B;
+    --green-bg:#E4F6EE;
+    --red:#D64550;
+    --red-bg:#FBE7E8;
+    --blue:#3E7CB1;
+    --radius:18px;
+    --radius-sm:12px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:"Comic Sans MS","Comic Sans","Chalkboard SE","Marker Felt",sans-serif;
+    overscroll-behavior-y:contain;}
+  body{padding-top:var(--safe-t);}
+  #app{max-width:560px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:24px;}
+
+  h1,h2,h3{text-align:center;}
+
+  /* ---- Header ---- */
+  .topbar{padding:22px 20px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .mark{font-size:11.5px;letter-spacing:.18em;color:var(--gold);font-weight:700;text-transform:uppercase;}
+  .topbar h1{margin:2px 0 0;font-size:26px;font-weight:800;letter-spacing:-0.01em;}
+  .topbar h1 span{color:var(--gold);}
+
+  /* ---- Tab sections ---- */
+  .tab{display:none;padding:0 16px;animation:fade .25s ease;}
+  .tab.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- Cards ---- */
+  .card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);
+    padding:18px;margin-bottom:12px;text-align:center;box-shadow:0 2px 0 var(--border);}
+  .card-label{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:700;margin-bottom:8px;text-align:center;}
+  .card-value{font-size:25px;font-weight:800;letter-spacing:-0.01em;text-align:center;}
+  .card-sub{font-size:13px;color:var(--text-dim);margin-top:4px;text-align:center;}
+  .card-value.pos{color:var(--green);}
+  .card-value.neg{color:var(--red);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .hero-result{background:linear-gradient(180deg,#FFF7E6,#FFFFFF);
+    border:2px solid var(--gold-dim);border-radius:22px;padding:26px 20px;margin-bottom:14px;text-align:center;}
+  .hero-result .card-label{color:var(--gold);}
+  .hero-result .card-value{font-size:34px;}
+
+  /* ---- Nav grid (Accueil) ---- */
+  .nav-title{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);
+    font-weight:700;margin:22px 0 12px;text-align:center;}
+  .nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;}
+  .nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    padding:18px 10px;background:var(--surface);border:2px solid var(--border);border-radius:16px;
+    color:var(--text);font-size:14px;font-weight:800;cursor:pointer;text-align:center;box-shadow:0 2px 0 var(--border);}
+  .nav-btn:active{background:var(--surface2);}
+  .nav-btn .ic{font-size:24px;}
+
+  /* ---- Buttons ---- */
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:var(--radius-sm);
+    border:2px solid transparent;font-size:15.5px;font-weight:800;cursor:pointer;font-family:inherit;text-align:center;}
+  .btn-gold{background:var(--gold-dim);border-color:var(--gold);color:#3A2A00;}
+  .btn-outline{background:var(--surface);border-color:var(--border);color:var(--text);}
+  .btn-green{background:var(--green-bg);border-color:var(--green);color:#0C5C3D;}
+  .btn-red{background:var(--red-bg);border-color:var(--red);color:#7A1B22;}
+  .btn-sm{padding:10px 14px;font-size:13px;width:auto;border-radius:10px;}
+  .btn:disabled{opacity:.4;}
+
+  /* ---- Forms ---- */
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);font-weight:700;margin-bottom:6px;text-align:center;}
+  .field input,.field select{width:100%;padding:13px 14px;background:var(--surface);border:2px solid var(--border);
+    border-radius:12px;color:var(--text);font-size:15.5px;font-family:inherit;text-align:center;}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--gold);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  /* ---- Section header ---- */
+  .sec-header{padding:20px 4px 14px;text-align:center;}
+  .sec-header h2{margin:0;font-size:21px;font-weight:800;}
+  .sec-header p{margin:4px 0 0;font-size:13px;color:var(--text-dim);text-align:center;}
+
+  /* ---- Positions ---- */
+  .pos-item{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
+  .pos-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .pos-name{font-size:16px;font-weight:800;}
+  .pos-cost{font-size:16px;font-weight:800;color:var(--gold);}
+  .pos-meta{display:flex;justify-content:center;gap:16px;font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
+  .pos-bar-track{height:8px;background:var(--surface3);border-radius:6px;overflow:hidden;}
+  .pos-bar-fill{height:100%;background:var(--gold);border-radius:6px;}
+  .pos-pct{font-size:11.5px;color:var(--text-faint);margin-top:6px;text-align:center;}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-dim);}
+  .empty-state .ic{font-size:38px;margin-bottom:10px;}
+
+  /* ---- Simulation panel ---- */
+  .sim-panel{background:var(--surface2);border:2px dashed var(--border);border-radius:16px;padding:16px;margin:16px 0;}
+  .sim-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);font-weight:800;margin-bottom:10px;text-align:center;}
+  .sim-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid var(--border);}
+  .sim-row:last-child{border-bottom:none;}
+  .sim-row .k{color:var(--text-dim);}
+  .sim-row .v{font-weight:800;}
+  .sim-row .v.big{font-size:17px;}
+
+  /* ---- Historique ---- */
+  .hist-item{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px;}
+  .hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .hist-left{display:flex;align-items:center;gap:10px;}
+  .badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.02em;}
+  .badge.achat{background:var(--green-bg);color:var(--green);}
+  .badge.vente{background:var(--red-bg);color:var(--red);}
+  .hist-valeur{font-weight:800;font-size:15px;}
+  .hist-date{font-size:12px;color:var(--text-faint);}
+  .hist-detail{font-size:13px;color:var(--text-dim);display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;margin-top:6px;text-align:center;}
+  .hist-actions{display:flex;gap:8px;margin-top:10px;}
+
+  /* ---- Latente ---- */
+  .lat-item{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
+  .lat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .lat-head .name{font-weight:800;font-size:15.5px;}
+  .lat-head .meta{font-size:12px;color:var(--text-faint);}
+  .lat-input{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+  .lat-input .lat-label{font-size:12px;color:var(--text-dim);font-weight:700;text-align:center;}
+  .lat-input input{width:100%;font-size:22px;font-weight:800;padding:16px;text-align:center;
+    background:var(--surface2);border:2px solid var(--gold-dim);border-radius:14px;color:var(--text);
+    font-family:inherit;}
+  .lat-input input:focus{outline:none;border-color:var(--gold);}
+  .lat-results{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px;}
+  .lat-results .kv{background:var(--surface2);border-radius:10px;padding:8px 10px;text-align:center;}
+  .lat-results .kv .k{color:var(--text-faint);display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+  .lat-results .kv .v{font-weight:800;font-size:14px;}
+  .lat-empty-note{font-size:12px;color:var(--text-faint);text-align:center;margin:6px 0 14px;}
+
+  /* ---- Excel tab ---- */
+  .dropzone{border:2.5px dashed var(--border);border-radius:18px;padding:34px 18px;text-align:center;
+    background:var(--surface);cursor:pointer;margin-bottom:16px;}
+  .dropzone .ic{font-size:34px;margin-bottom:10px;}
+  .dropzone .t{font-weight:800;font-size:15px;margin-bottom:4px;}
+  .dropzone .s{font-size:12.5px;color:var(--text-dim);}
+  .confirm-panel{background:var(--surface2);border:2px solid var(--gold-dim);border-radius:16px;padding:18px;margin-bottom:16px;text-align:center;}
+  .confirm-panel h3{margin:0 0 10px;font-size:15px;color:var(--gold);}
+  .confirm-panel .line{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;}
+  .confirm-actions{display:flex;gap:10px;margin-top:14px;}
+
+  /* ---- Détail par valeur ---- */
+  .dv-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+
+  /* ---- Floating home buttons ---- */
+  .fab{position:fixed;bottom:calc(18px + var(--safe-b));width:54px;height:54px;border-radius:50%;
+    background:var(--gold-dim);border:2px solid var(--gold);color:#3A2A00;font-size:22px;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,0.15);z-index:50;cursor:pointer;}
+  .fab.left{left:16px;}
+  .fab.right{right:16px;}
+  .fab:active{transform:scale(.92);}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+  .toast{position:fixed;bottom:calc(90px + var(--safe-b));left:50%;transform:translateX(-50%);
+    background:var(--text);color:var(--bg);padding:12px 18px;text-align:center;
+    border-radius:14px;font-size:13.5px;font-weight:700;z-index:100;opacity:0;pointer-events:none;transition:.25s;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="mark">Bourse de Casablanca</div>
+    <h1>BOURSSATY</h1>
+  </div>
+
+  <!-- ===================== ACCUEIL ===================== -->
+  <section class="tab active" id="tab-accueil" data-tab="accueil">
+    <div class="hero-result">
+      <div class="card-label">Résultat global</div>
+      <div class="card-value" id="acc-resultat">0,00</div>
+      <div class="card-sub" id="acc-resultat-sub">Gain réalisé net + plus-value latente</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-label">Coût positions ouvertes</div>
+        <div class="card-value" id="acc-cout">0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Gain réalisé (net)</div>
+        <div class="card-value" id="acc-gain">0,00</div>
+        <div class="card-sub" id="acc-perf">0,00 %</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total encaissé</div>
+        <div class="card-value" id="acc-encaisse">0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total décaissé</div>
+        <div class="card-value" id="acc-decaisse">0,00</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Plus/moins-value latente totale</div>
+      <div class="card-value" id="acc-latente">0,00</div>
+      <div class="card-sub" id="acc-latente-sub">Valeurs avec cours du jour renseigné</div>
+    </div>
+
+    <div class="nav-title">Menu</div>
+    <div class="nav-grid">
+      <div class="nav-btn" onclick="goTab('vente')"><span class="ic">💰</span>Vente</div>
+      <div class="nav-btn" onclick="goTab('achat')"><span class="ic">🛒</span>Achat</div>
+      <div class="nav-btn" onclick="goTab('positions')"><span class="ic">📊</span>Positions</div>
+      <div class="nav-btn" onclick="goTab('latente')"><span class="ic">📈</span>Latente</div>
+      <div class="nav-btn" onclick="goTab('historique')"><span class="ic">🕘</span>Historique</div>
+      <div class="nav-btn" onclick="goTab('detailvaleur')"><span class="ic">🔎</span>Détail par valeur</div>
+      <div class="nav-btn" onclick="goTab('excel')"><span class="ic">📑</span>Excel</div>
+      <div class="nav-btn" onclick="goTab('investissement')"><span class="ic">💵</span>Investissement</div>
+    </div>
+  </section>
+
+  <!-- ===================== POSITIONS ===================== -->
+  <section class="tab" id="tab-positions" data-tab="positions">
+    <div class="sec-header"><h2>Positions</h2><p>Détail du portefeuille ouvert</p></div>
+    <div id="positions-list"></div>
+  </section>
+
+  <!-- ===================== ACHAT ===================== -->
+  <section class="tab" id="tab-achat" data-tab="achat">
+    <div class="sec-header"><h2>Achat</h2><p>Nouvelle transaction d'achat</p></div>
+
+    <div class="field">
+      <label for="ac-valeur">Nom de l'action</label>
+      <input type="text" id="ac-valeur" list="valeurs-list" placeholder="Ex: INVOLYS" oninput="simulateAchat()" autocomplete="off">
+      <datalist id="valeurs-list"></datalist>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="ac-prix">Prix d'achat</label>
+        <input type="number" id="ac-prix" inputmode="decimal" step="0.01" placeholder="0,00" oninput="simulateAchat()">
+      </div>
+      <div class="field">
+        <label for="ac-qte">Quantité</label>
+        <input type="number" id="ac-qte" inputmode="numeric" step="1" placeholder="0" oninput="simulateAchat()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="ac-frais">Frais d'achat (% HT)</label>
+        <input type="number" id="ac-frais" inputmode="decimal" step="0.01" value="0.1" oninput="simulateAchat()">
+      </div>
+      <div class="field">
+        <label for="ac-date">Date</label>
+        <input type="date" id="ac-date">
+      </div>
+    </div>
+
+    <div class="sim-panel" id="ac-sim" style="display:none;"></div>
+
+    <button class="btn btn-gold" onclick="confirmerAchat()">Confirmer l'achat</button>
+  </section>
+
+  <!-- ===================== VENTE ===================== -->
+  <section class="tab" id="tab-vente" data-tab="vente">
+    <div class="sec-header"><h2>Vente</h2><p>Nouvelle transaction de vente</p></div>
+
+    <div class="field">
+      <label for="ve-valeur">Valeur détenue</label>
+      <select id="ve-valeur" onchange="onVenteValeurChange()"></select>
+    </div>
+    <div class="card" id="ve-position-info" style="display:none;"></div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="ve-prix">Prix de vente</label>
+        <input type="number" id="ve-prix" inputmode="decimal" step="0.01" placeholder="0,00" oninput="simulateVente()">
+      </div>
+      <div class="field">
+        <label for="ve-qte">Quantité</label>
+        <input type="number" id="ve-qte" inputmode="numeric" step="1" placeholder="0" oninput="simulateVente()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="ve-frais">Frais de vente (% HT)</label>
+        <input type="number" id="ve-frais" inputmode="decimal" step="0.01" value="0.1" oninput="simulateVente()">
+      </div>
+      <div class="field">
+        <label for="ve-date">Date</label>
+        <input type="date" id="ve-date">
+      </div>
+    </div>
+
+    <div class="sim-panel" id="ve-sim" style="display:none;"></div>
+
+    <button class="btn btn-red" onclick="confirmerVente()">Confirmer la vente</button>
+  </section>
+
+  <!-- ===================== LATENTE ===================== -->
+  <section class="tab" id="tab-latente" data-tab="latente">
+    <div class="sec-header"><h2>Latente</h2><p>Plus/moins-values non réalisées — toutes les positions ouvertes</p></div>
+    <div class="field">
+      <label for="lat-frais">Frais de vente estimés (% HT)</label>
+      <input type="number" id="lat-frais" inputmode="decimal" step="0.01" value="0.1" oninput="renderLatente()">
+    </div>
+    <div id="latente-list"></div>
+    <button class="btn btn-gold" onclick="validerLatente()" style="margin-top:6px;">Valider la situation latente</button>
+  </section>
+
+  <!-- ===================== HISTORIQUE ===================== -->
+  <section class="tab" id="tab-historique" data-tab="historique">
+    <div class="sec-header"><h2>Historique</h2><p>Toutes les transactions</p></div>
+
+    <div class="field">
+      <label for="hf-type">Opération</label>
+      <select id="hf-type" onchange="renderHistorique()">
+        <option value="">Toutes</option>
+        <option value="achat">Achat</option>
+        <option value="vente">Vente</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="hf-valeur">Valeur</label>
+      <select id="hf-valeur" onchange="renderHistorique()">
+        <option value="">Toutes</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="hf-debut">Du</label>
+        <input type="date" id="hf-debut" onchange="renderHistorique()">
+      </div>
+      <div class="field">
+        <label for="hf-fin">Au</label>
+        <input type="date" id="hf-fin" onchange="renderHistorique()">
+      </div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="resetFiltresHistorique()" style="margin-bottom:16px;">Réinitialiser les filtres</button>
+
+    <div id="historique-list"></div>
+  </section>
+
+  <!-- ===================== DÉTAIL PAR VALEUR ===================== -->
+  <section class="tab" id="tab-detailvaleur" data-tab="detailvaleur">
+    <div class="sec-header"><h2>Détail par valeur</h2><p>Historique et suivi valeur par valeur</p></div>
+    <div class="field">
+      <label for="dv-select">Choisir une valeur</label>
+      <select id="dv-select" onchange="renderDetailValeur()"></select>
+    </div>
+    <div id="dv-summary-wrap"></div>
+    <div id="dv-list"></div>
+  </section>
+
+  <!-- ===================== EXCEL ===================== -->
+  <section class="tab" id="tab-excel" data-tab="excel">
+    <div class="sec-header"><h2>Excel</h2><p>Import / export au format HistoriK</p></div>
+
+    <div class="dropzone" onclick="document.getElementById('excel-file-input').click()">
+      <div class="ic">📥</div>
+      <div class="t">Importer un fichier .xlsx</div>
+      <div class="s">Format HistoriK / Détail Latent</div>
+    </div>
+    <input type="file" id="excel-file-input" accept=".xlsx" style="display:none" onchange="handleExcelFile(event)">
+
+    <div id="excel-confirm"></div>
+
+    <div class="card">
+      <div class="card-label">Export</div>
+      <div class="card-sub" style="margin-bottom:12px;">Génère un fichier .xlsx avec les feuilles HistoriK et Détail Latent</div>
+      <button class="btn btn-outline" onclick="exportExcel()">Exporter vers Excel</button>
+    </div>
+  </section>
+
+  <!-- ===================== INVESTISSEMENT ===================== -->
+  <section class="tab" id="tab-investissement" data-tab="investissement">
+    <div class="sec-header"><h2>Investissement</h2><p>Injection et retrait de fonds</p></div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-label">Total injecté</div>
+        <div class="card-value" id="inv-injecte">0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total retiré</div>
+        <div class="card-value" id="inv-retire">0,00</div>
+      </div>
+    </div>
+    <div class="hero-result">
+      <div class="card-label">Global investi net</div>
+      <div class="card-value" id="inv-global">0,00</div>
+      <div class="card-sub">Total injecté − total retiré</div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-label">Total décaissé (achats)</div>
+        <div class="card-value" id="inv-decaisse">0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total encaissé (ventes)</div>
+        <div class="card-value" id="inv-encaisse">0,00</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Solde disponible (trésorerie)</div>
+      <div class="card-value" id="inv-solde">0,00</div>
+      <div class="card-sub">Injecté − retiré − décaissé + encaissé</div>
+    </div>
+
+    <div class="sec-header"><h2>Nouveau mouvement</h2></div>
+    <div class="field">
+      <label for="inv-type">Type de mouvement</label>
+      <select id="inv-type">
+        <option value="apport">Injection de fonds</option>
+        <option value="retrait">Retrait de fonds</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="inv-montant">Montant</label>
+        <input type="number" id="inv-montant" inputmode="decimal" step="0.01" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label for="inv-date">Date</label>
+        <input type="date" id="inv-date">
+      </div>
+    </div>
+    <div class="field">
+      <label for="inv-note">Note (optionnel)</label>
+      <input type="text" id="inv-note" placeholder="Ex : virement bancaire">
+    </div>
+    <button class="btn btn-gold" onclick="confirmerMouvementFonds()">Enregistrer le mouvement</button>
+
+    <div class="sec-header"><h2>Historique des mouvements</h2></div>
+    <div id="inv-list"></div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+let state = { transactions: [], coursJour: {}, fonds: [] };
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('boursaty_v3') || localStorage.getItem('bourseElite_v2');
+    if(raw){ state = JSON.parse(raw); }
+    if(!state.transactions) state.transactions = [];
+    if(!state.coursJour) state.coursJour = {};
+    if(!state.fonds) state.fonds = [];
+  }catch(e){ state = { transactions: [], coursJour: {}, fonds: [] }; }
+}
+function saveState(){
+  localStorage.setItem('boursaty_v3', JSON.stringify(state));
+}
+
+function fmt(n){
+  if(n === null || n === undefined || isNaN(n)) n = 0;
+  return n.toLocaleString('fr-FR', {maximumFractionDigits:2, minimumFractionDigits:2});
+}
+function fmtPct(n){
+  if(n === null || n === undefined || isNaN(n)) n = 0;
+  return n.toLocaleString('fr-FR', {maximumFractionDigits:2, minimumFractionDigits:2}) + ' %';
+}
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function uid(){ return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+/* ============================================================
+   MOTEUR DE CALCUL - rejoue l'historique complet à chaque fois
+============================================================ */
+function replay(){
+  const perValeur = {}; // valeur -> {qty, pru}
+  const rows = [];
+  let totalEncaisse = 0;
+  let totalDecaisse = 0;
+  let realizedGainTotal = 0; // NET (après taxe 15%)
+  let totalCostBasisSold = 0;
+
+  const sorted = [...state.transactions].sort((a,b)=>{
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.seq||0) - (b.seq||0);
+  });
+
+  sorted.forEach(txn=>{
+    const v = txn.valeur;
+    if(!perValeur[v]) perValeur[v] = {qty:0, pru:0};
+
+    if(txn.type === 'achat'){
+      const pruAvant = perValeur[v].pru;
+      const pruAchatUnitaire = txn.prix + txn.prix * (txn.fraisPct/100) * 1.10;
+      const brutAchat = txn.prix * txn.qte;
+      const frAchatHT = brutAchat * (txn.fraisPct/100);
+      const tvaFrAchatHT = frAchatHT * 0.10;
+      const frAchatTTC = frAchatHT + tvaFrAchatHT;
+
+      const existing = perValeur[v];
+      const newQty = existing.qty + txn.qte;
+      const newPru = existing.qty > 0
+        ? (existing.pru * existing.qty + pruAchatUnitaire * txn.qte) / newQty
+        : pruAchatUnitaire;
+
+      perValeur[v] = { qty:newQty, pru:newPru };
+      totalDecaisse += brutAchat + frAchatTTC;
+
+      rows.push({...txn, brutAchat, frAchatHT, tvaFrAchatHT, frAchatTTC,
+        pruAvant, pruAchatUnitaire, pruApres:newPru, qtyApres:newQty,
+        frVenteHT:0, tvaFrVente:0, frVenteTTC:0, taxe15:0, brutVente:0, gainNet:0,
+        costBasis:0, plusValueBrute:0, pctPerf:0, montantNet: -(brutAchat+frAchatTTC)});
+    } else {
+      const pru = perValeur[v].pru;
+      const brutVente = txn.prix * txn.qte;
+      const frVenteHT = brutVente * (txn.fraisPct/100);
+      const tvaFrVente = frVenteHT * 0.10;
+      const frVenteTTC = frVenteHT + tvaFrVente;
+      const costBasis = pru * txn.qte;
+      const plusValueBrute = brutVente - frVenteTTC - costBasis;
+      const taxe15 = plusValueBrute > 0 ? plusValueBrute * 0.15 : 0;
+      const gainNet = plusValueBrute - taxe15;
+      const pctPerf = costBasis>0 ? (gainNet/costBasis*100) : 0;
+      const montantNet = brutVente - frVenteTTC - taxe15;
+
+      perValeur[v].qty -= txn.qte;
+      totalEncaisse += brutVente;
+      totalDecaisse += frVenteTTC + taxe15;
+      realizedGainTotal += gainNet;
+      totalCostBasisSold += costBasis;
+
+      rows.push({...txn, brutAchat:0, frAchatHT:0, tvaFrAchatHT:0, frAchatTTC:0,
+        pruAvant:pru, pruUtilise:pru, pruApres:pru, qtyApres:perValeur[v].qty,
+        frVenteHT, tvaFrVente, frVenteTTC, taxe15, brutVente, gainNet,
+        costBasis, plusValueBrute, pctPerf, montantNet});
+    }
+  });
+
+  let totalCostOpenPositions = 0;
+  Object.keys(perValeur).forEach(v=>{
+    if(perValeur[v].qty > 1e-9){
+      totalCostOpenPositions += perValeur[v].pru * perValeur[v].qty;
+    } else {
+      delete perValeur[v];
+    }
+  });
+
+  const perfPct = totalCostBasisSold > 0 ? (realizedGainTotal / totalCostBasisSold) * 100 : 0;
+
+  return { perValeur, rows, totalEncaisse, totalDecaisse, realizedGainTotal, totalCostOpenPositions, perfPct };
+}
+
+function computeLatente(feePct){
+  const { perValeur } = replay();
+  const items = [];
+  let totalNette = 0;
+  Object.keys(perValeur).sort().forEach(v=>{
+    const {qty, pru} = perValeur[v];
+    const valAchat = pru * qty;
+    const cours = state.coursJour[v];
+    let item = { valeur:v, qty, pru, valAchat, cours: cours !== undefined ? cours : null,
+      valMarche:null, fraisTTCest:null, taxe15est:null, brute:null, nette:null };
+    if(cours !== undefined && cours !== null && cours !== ''){
+      const c = parseFloat(cours);
+      const valMarche = c * qty;
+      const fraisTTCest = valMarche * (feePct/100) * 1.10;
+      const brute = valMarche - valAchat;
+      const netAvantTaxe = brute - fraisTTCest;
+      const taxe15est = netAvantTaxe > 0 ? netAvantTaxe * 0.15 : 0;
+      const nette = netAvantTaxe - taxe15est;
+      item = {...item, valMarche, fraisTTCest, taxe15est, brute, nette};
+      totalNette += nette;
+    }
+    items.push(item);
+  });
+  return { items, totalNette };
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function goTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  renderFabs(name);
+  renderAll(name);
+  window.scrollTo(0,0);
+}
+function renderFabs(name){
+  document.querySelectorAll('.fab').forEach(f=>f.remove());
+  if(name !== 'accueil'){
+    const left = document.createElement('button');
+    left.className = 'fab left'; left.innerHTML='🏠'; left.onclick=()=>goTab('accueil');
+    const right = document.createElement('button');
+    right.className = 'fab right'; right.innerHTML='🏠'; right.onclick=()=>goTab('accueil');
+    document.body.appendChild(left);
+    document.body.appendChild(right);
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   RENDER: ACCUEIL
+============================================================ */
+function renderAccueil(){
+  const r = replay();
+  const { items, totalNette } = computeLatente(parseFloat(document.getElementById('lat-frais')?.value || 0.1));
+  const resultatGlobal = r.realizedGainTotal + totalNette;
+
+  document.getElementById('acc-cout').textContent = fmt(r.totalCostOpenPositions);
+  document.getElementById('acc-gain').textContent = fmt(r.realizedGainTotal);
+  document.getElementById('acc-gain').className = 'card-value ' + (r.realizedGainTotal>=0?'pos':'neg');
+  document.getElementById('acc-perf').textContent = fmtPct(r.perfPct);
+  document.getElementById('acc-encaisse').textContent = fmt(r.totalEncaisse);
+  document.getElementById('acc-decaisse').textContent = fmt(r.totalDecaisse);
+  document.getElementById('acc-latente').textContent = fmt(totalNette);
+  document.getElementById('acc-latente').className = 'card-value ' + (totalNette>=0?'pos':'neg');
+  const nbCours = items.filter(i=>i.cours!==null).length;
+  document.getElementById('acc-latente-sub').textContent = nbCours+' / '+items.length+' valeur(s) avec cours renseigné';
+  document.getElementById('acc-resultat').textContent = fmt(resultatGlobal);
+  document.getElementById('acc-resultat').className = 'card-value ' + (resultatGlobal>=0?'pos':'neg');
+}
+
+/* ============================================================
+   RENDER: POSITIONS
+============================================================ */
+function renderPositions(){
+  const r = replay();
+  const el = document.getElementById('positions-list');
+  const valeurs = Object.keys(r.perValeur).sort();
+  if(valeurs.length === 0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">📭</div>Portefeuille vide</div>';
+    return;
+  }
+  const totalCost = r.totalCostOpenPositions;
+  el.innerHTML = valeurs.map(v=>{
+    const p = r.perValeur[v];
+    const cost = p.pru * p.qty;
+    const pct = totalCost>0 ? (cost/totalCost*100) : 0;
+    return `<div class="pos-item">
+      <div class="pos-top"><div class="pos-name">${escapeHtml(v)}</div><div class="pos-cost">${fmt(cost)}</div></div>
+      <div class="pos-meta"><span>Qté : ${p.qty}</span><span>PRU : ${fmt(p.pru)}</span></div>
+      <div class="pos-bar-track"><div class="pos-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      <div class="pos-pct">${pct.toFixed(1)} % du portefeuille</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER: ACHAT
+============================================================ */
+function allValeursConnues(){
+  return [...new Set(state.transactions.map(t=>t.valeur))].sort();
+}
+function refreshValeursDatalist(){
+  const dl = document.getElementById('valeurs-list');
+  dl.innerHTML = allValeursConnues().map(v=>`<option value="${escapeHtml(v)}">`).join('');
+}
+
+function simulateAchat(){
+  const valeur = document.getElementById('ac-valeur').value.trim();
+  const prix = parseFloat(document.getElementById('ac-prix').value);
+  const qte = parseFloat(document.getElementById('ac-qte').value);
+  const fraisPct = parseFloat(document.getElementById('ac-frais').value);
+  const sim = document.getElementById('ac-sim');
+
+  if(!valeur || !prix || !qte || isNaN(fraisPct) || prix<=0 || qte<=0){
+    sim.style.display='none';
+    return;
+  }
+  const pruAchatUnitaire = prix + prix*(fraisPct/100)*1.10;
+  const brutAchat = prix*qte;
+  const frAchatHT = brutAchat*(fraisPct/100);
+  const tvaFrAchatHT = frAchatHT*0.10;
+  const frAchatTTC = frAchatHT+tvaFrAchatHT;
+  const coutTotal = brutAchat + frAchatTTC;
+
+  const { perValeur } = replay();
+  const existing = perValeur[valeur];
+  let pruFinal = pruAchatUnitaire;
+  let qtyFinale = qte;
+  if(existing && existing.qty>0){
+    qtyFinale = existing.qty + qte;
+    pruFinal = (existing.pru*existing.qty + pruAchatUnitaire*qte)/qtyFinale;
+  }
+
+  sim.style.display='block';
+  sim.innerHTML = `
+    <div class="sim-title">Simulation</div>
+    <div class="sim-row"><span class="k">Montant brut</span><span class="v">${fmt(brutAchat)}</span></div>
+    <div class="sim-row"><span class="k">Frais HT</span><span class="v">${fmt(frAchatHT)}</span></div>
+    <div class="sim-row"><span class="k">TVA (10%)</span><span class="v">${fmt(tvaFrAchatHT)}</span></div>
+    <div class="sim-row"><span class="k">Frais TTC</span><span class="v">${fmt(frAchatTTC)}</span></div>
+    <div class="sim-row"><span class="k">Coût total engagé</span><span class="v big">${fmt(coutTotal)}</span></div>
+    <div class="sim-row"><span class="k">PRU de cet achat</span><span class="v">${fmt(pruAchatUnitaire)}</span></div>
+    <div class="sim-row"><span class="k">PRU final position (${qtyFinale})</span><span class="v big">${fmt(pruFinal)}</span></div>
+  `;
+}
+
+function confirmerAchat(){
+  const valeur = document.getElementById('ac-valeur').value.trim();
+  const prix = parseFloat(document.getElementById('ac-prix').value);
+  const qte = parseFloat(document.getElementById('ac-qte').value);
+  const fraisPct = parseFloat(document.getElementById('ac-frais').value);
+  const date = document.getElementById('ac-date').value || todayStr();
+
+  if(!valeur || !prix || !qte || prix<=0 || qte<=0 || isNaN(fraisPct)){
+    showToast('Veuillez remplir tous les champs correctement');
+    return;
+  }
+  state.transactions.push({
+    id: uid(), seq: state.transactions.length, date, type:'achat',
+    valeur, prix, qte, fraisPct
+  });
+  saveState();
+  document.getElementById('ac-valeur').value='';
+  document.getElementById('ac-prix').value='';
+  document.getElementById('ac-qte').value='';
+  document.getElementById('ac-frais').value='0.1';
+  document.getElementById('ac-sim').style.display='none';
+  document.getElementById('ac-date').value = '';
+  refreshValeursDatalist();
+  showToast('Achat enregistré');
+  goTab('positions');
+}
+
+/* ============================================================
+   RENDER: VENTE
+============================================================ */
+function renderVenteForm(){
+  const { perValeur } = replay();
+  const sel = document.getElementById('ve-valeur');
+  const valeurs = Object.keys(perValeur).sort();
+  if(valeurs.length===0){
+    sel.innerHTML = '<option value="">Aucune position ouverte</option>';
+    document.getElementById('ve-position-info').style.display='none';
+    document.getElementById('ve-sim').style.display='none';
+    return;
+  }
+  const prevVal = sel.value;
+  sel.innerHTML = valeurs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(valeurs.includes(prevVal)) sel.value = prevVal;
+  onVenteValeurChange();
+}
+function onVenteValeurChange(){
+  const { perValeur } = replay();
+  const v = document.getElementById('ve-valeur').value;
+  const info = document.getElementById('ve-position-info');
+  if(!v || !perValeur[v]){ info.style.display='none'; return; }
+  const p = perValeur[v];
+  info.style.display='block';
+  info.innerHTML = `<div class="card-label">Position actuelle — ${escapeHtml(v)}</div>
+    <div class="card-sub">Quantité détenue : <b style="color:var(--text)">${p.qty}</b> · PRU actuel : <b style="color:var(--text)">${fmt(p.pru)}</b></div>`;
+  simulateVente();
+}
+function simulateVente(){
+  const { perValeur } = replay();
+  const v = document.getElementById('ve-valeur').value;
+  const prix = parseFloat(document.getElementById('ve-prix').value);
+  const qte = parseFloat(document.getElementById('ve-qte').value);
+  const fraisPct = parseFloat(document.getElementById('ve-frais').value);
+  const sim = document.getElementById('ve-sim');
+
+  if(!v || !perValeur[v] || !prix || !qte || prix<=0 || qte<=0 || isNaN(fraisPct)){
+    sim.style.display='none';
+    return;
+  }
+  const pru = perValeur[v].pru;
+  const brutVente = prix*qte;
+  const frVenteHT = brutVente*(fraisPct/100);
+  const tvaFrVente = frVenteHT*0.10;
+  const frVenteTTC = frVenteHT+tvaFrVente;
+  const costBasis = pru*qte;
+  const plusValueBrute = brutVente - frVenteTTC - costBasis;
+  const taxe15 = plusValueBrute>0 ? plusValueBrute*0.15 : 0;
+  const gainNet = plusValueBrute - taxe15;
+  const montantNet = brutVente - frVenteTTC - taxe15;
+  const pctRealise = costBasis>0 ? (gainNet/costBasis*100) : 0;
+
+  sim.style.display='block';
+  sim.innerHTML = `
+    <div class="sim-title">Simulation</div>
+    <div class="sim-row"><span class="k">Montant brut de vente</span><span class="v">${fmt(brutVente)}</span></div>
+    <div class="sim-row"><span class="k">Frais TTC</span><span class="v">${fmt(frVenteTTC)}</span></div>
+    <div class="sim-row"><span class="k">Montant engagé (coût)</span><span class="v">${fmt(costBasis)}</span></div>
+    <div class="sim-row"><span class="k">Plus/moins-value brute</span><span class="v">${fmt(plusValueBrute)}</span></div>
+    <div class="sim-row"><span class="k">Taxe 15%</span><span class="v">${fmt(taxe15)}</span></div>
+    <div class="sim-row"><span class="k">Gain net</span><span class="v big" style="color:${gainNet>=0?'var(--green)':'var(--red)'}">${fmt(gainNet)}</span></div>
+    <div class="sim-row"><span class="k">Montant net reçu</span><span class="v big">${fmt(montantNet)}</span></div>
+    <div class="sim-row"><span class="k">% réalisé</span><span class="v">${fmtPct(pctRealise)}</span></div>
+  `;
+}
+function confirmerVente(){
+  const { perValeur } = replay();
+  const valeur = document.getElementById('ve-valeur').value;
+  const prix = parseFloat(document.getElementById('ve-prix').value);
+  const qte = parseFloat(document.getElementById('ve-qte').value);
+  const fraisPct = parseFloat(document.getElementById('ve-frais').value);
+  const date = document.getElementById('ve-date').value || todayStr();
+
+  if(!valeur || !perValeur[valeur]){ showToast('Sélectionnez une valeur'); return; }
+  if(!prix || !qte || prix<=0 || qte<=0 || isNaN(fraisPct)){ showToast('Veuillez remplir tous les champs correctement'); return; }
+  if(qte > perValeur[valeur].qty + 1e-9){ showToast('Quantité supérieure à la position détenue'); return; }
+
+  state.transactions.push({
+    id: uid(), seq: state.transactions.length, date, type:'vente',
+    valeur, prix, qte, fraisPct
+  });
+  saveState();
+  document.getElementById('ve-prix').value='';
+  document.getElementById('ve-qte').value='';
+  document.getElementById('ve-frais').value='0.1';
+  document.getElementById('ve-sim').style.display='none';
+  document.getElementById('ve-date').value='';
+  showToast('Vente enregistrée');
+  goTab('positions');
+}
+
+/* ============================================================
+   RENDER: LATENTE
+============================================================ */
+function renderLatente(){
+  const feePct = parseFloat(document.getElementById('lat-frais').value) || 0.1;
+  const { items } = computeLatente(feePct);
+  const el = document.getElementById('latente-list');
+  if(items.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">📭</div>Portefeuille vide</div>';
+    return;
+  }
+  el.innerHTML = items.map(it=>{
+    const hasData = it.cours !== null;
+    return `<div class="lat-item">
+      <div class="lat-head">
+        <div class="name">${escapeHtml(it.valeur)}</div>
+        <div class="meta">Qté ${it.qty} · PRU ${fmt(it.pru)}</div>
+      </div>
+      <div class="lat-input">
+        <span class="lat-label">Cours du jour</span>
+        <input type="text" inputmode="decimal" placeholder="0,00"
+          value="${it.cours !== null ? String(it.cours).replace('.', ',') : ''}"
+          onchange="updateCoursJour('${jsEsc(it.valeur)}', this.value)">
+      </div>
+      ${hasData ? `
+      <div class="lat-results">
+        <div class="kv"><span class="k">Val. achat</span><span class="v">${fmt(it.valAchat)}</span></div>
+        <div class="kv"><span class="k">Val. marché</span><span class="v">${fmt(it.valMarche)}</span></div>
+        <div class="kv"><span class="k">Frais TTC est.</span><span class="v">${fmt(it.fraisTTCest)}</span></div>
+        <div class="kv"><span class="k">Taxe 15% est.</span><span class="v">${fmt(it.taxe15est)}</span></div>
+        <div class="kv"><span class="k">% +/- value</span><span class="v" style="color:${it.nette>=0?'var(--green)':'var(--red)'}">${fmtPct(it.valAchat>0 ? (it.nette/it.valAchat*100) : 0)}</span></div>
+        <div class="kv"><span class="k">+/- nette latente</span><span class="v" style="color:${it.nette>=0?'var(--green)':'var(--red)'}">${fmt(it.nette)}</span></div>
+      </div>` : `<div class="lat-empty-note">Saisir un cours du jour pour calculer la latente</div>`}
+    </div>`;
+  }).join('');
+}
+function updateCoursJour(valeur, value){
+  const clean = String(value).replace(',', '.').trim();
+  if(clean === '' || isNaN(parseFloat(clean))){ delete state.coursJour[valeur]; }
+  else { state.coursJour[valeur] = parseFloat(clean); }
+  saveState();
+  renderLatente();
+}
+function validerLatente(){
+  saveState();
+  showToast('Situation latente enregistrée');
+  renderAccueil();
+}
+
+/* ============================================================
+   RENDER: HISTORIQUE
+============================================================ */
+function populateHistoriqueValeurFilter(){
+  const sel = document.getElementById('hf-valeur');
+  const prevVal = sel.value;
+  const valeurs = allValeursConnues();
+  sel.innerHTML = '<option value="">Toutes</option>' + valeurs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(valeurs.includes(prevVal)) sel.value = prevVal;
+}
+function resetFiltresHistorique(){
+  document.getElementById('hf-type').value='';
+  document.getElementById('hf-valeur').value='';
+  document.getElementById('hf-debut').value='';
+  document.getElementById('hf-fin').value='';
+  renderHistorique();
+}
+function renderHistorique(){
+  populateHistoriqueValeurFilter();
+  const r = replay();
+  const el = document.getElementById('historique-list');
+
+  const fType = document.getElementById('hf-type').value;
+  const fValeur = document.getElementById('hf-valeur').value;
+  const fDebut = document.getElementById('hf-debut').value;
+  const fFin = document.getElementById('hf-fin').value;
+
+  let rows = r.rows;
+  if(fType) rows = rows.filter(row=>row.type===fType);
+  if(fValeur) rows = rows.filter(row=>row.valeur===fValeur);
+  if(fDebut) rows = rows.filter(row=>row.date >= fDebut);
+  if(fFin) rows = rows.filter(row=>row.date <= fFin);
+
+  if(rows.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">🕘</div>Aucune transaction</div>';
+    return;
+  }
+  const rowsDesc = [...rows].reverse();
+  el.innerHTML = rowsDesc.map(row=>{
+    const isAchat = row.type==='achat';
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-left">
+          <span class="badge ${isAchat?'achat':'vente'}">${isAchat?'Achat':'Vente'}</span>
+          <span class="hist-valeur">${escapeHtml(row.valeur)}</span>
+        </div>
+        <span class="hist-date">${formatDateFR(row.date)}</span>
+      </div>
+      <div class="hist-detail">
+        <span>Prix : ${fmt(row.prix)}</span>
+        <span>Qté : ${row.qte}</span>
+        <span>Frais : ${fmt(row.fraisPct)}%</span>
+        ${isAchat ? `<span>Frais TTC : ${fmt(row.frAchatTTC)}</span>` :
+          `<span>Taxe 15% : ${fmt(row.taxe15)}</span><span>Gain net : ${fmt(row.gainNet)}</span><span>% : ${fmtPct(row.pctPerf)}</span>`}
+      </div>
+      <div class="hist-actions">
+        <button class="btn btn-outline btn-sm" onclick="editTxn('${row.id}')">Modifier</button>
+        <button class="btn btn-outline btn-sm" onclick="deleteTxn('${row.id}')" style="color:var(--red)">Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function formatDateFR(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function deleteTxn(id){
+  if(!confirm('Supprimer cette transaction ? Le PRU et les totaux seront recalculés.')) return;
+  state.transactions = state.transactions.filter(t=>t.id!==id);
+  saveState();
+  refreshValeursDatalist();
+  showToast('Transaction supprimée');
+  renderAll(currentTabName());
+}
+function editTxn(id){
+  const t = state.transactions.find(x=>x.id===id);
+  if(!t) return;
+  const newPrix = prompt('Prix', t.prix);
+  if(newPrix===null) return;
+  const newQte = prompt('Quantité', t.qte);
+  if(newQte===null) return;
+  const newFrais = prompt('Frais (% HT)', t.fraisPct);
+  if(newFrais===null) return;
+  const newDate = prompt('Date (AAAA-MM-JJ)', t.date);
+  if(newDate===null) return;
+  t.prix = parseFloat(newPrix) || t.prix;
+  t.qte = parseFloat(newQte) || t.qte;
+  t.fraisPct = parseFloat(newFrais);
+  if(isNaN(t.fraisPct)) t.fraisPct = 0.1;
+  t.date = newDate || t.date;
+  saveState();
+  showToast('Transaction modifiée');
+  renderAll(currentTabName());
+}
+function currentTabName(){
+  const active = document.querySelector('.tab.active');
+  return active ? active.getAttribute('data-tab') : 'accueil';
+}
+
+/* ============================================================
+   RENDER: DÉTAIL PAR VALEUR
+============================================================ */
+function renderDetailValeurSelect(){
+  const sel = document.getElementById('dv-select');
+  const valeurs = allValeursConnues();
+  const prevVal = sel.value;
+  if(valeurs.length===0){
+    sel.innerHTML = '<option value="">Aucune valeur</option>';
+    return;
+  }
+  sel.innerHTML = valeurs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(valeurs.includes(prevVal)) sel.value = prevVal;
+}
+function renderDetailValeur(){
+  renderDetailValeurSelect();
+  const v = document.getElementById('dv-select').value;
+  const summaryWrap = document.getElementById('dv-summary-wrap');
+  const listEl = document.getElementById('dv-list');
+  if(!v){
+    summaryWrap.innerHTML = '';
+    listEl.innerHTML = '<div class="empty-state"><div class="ic">🔎</div>Aucune valeur enregistrée</div>';
+    return;
+  }
+  const r = replay();
+  const rowsForV = r.rows.filter(row=>row.valeur===v);
+  const pos = r.perValeur[v];
+  const realizedForV = rowsForV.filter(row=>row.type==='vente').reduce((s,row)=>s+row.gainNet,0);
+
+  summaryWrap.innerHTML = `
+    <div class="dv-summary">
+      <div class="card">
+        <div class="card-label">Position actuelle</div>
+        <div class="card-value">${pos ? pos.qty : 0}</div>
+        <div class="card-sub">PRU : ${pos ? fmt(pos.pru) : '—'}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Gain réalisé (net)</div>
+        <div class="card-value ${realizedForV>=0?'pos':'neg'}">${fmt(realizedForV)}</div>
+      </div>
+    </div>`;
+
+  if(rowsForV.length===0){
+    listEl.innerHTML = '<div class="empty-state"><div class="ic">📭</div>Aucune transaction pour cette valeur</div>';
+    return;
+  }
+  const rowsDesc = [...rowsForV].reverse();
+  listEl.innerHTML = rowsDesc.map(row=>{
+    const isAchat = row.type==='achat';
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-left">
+          <span class="badge ${isAchat?'achat':'vente'}">${isAchat?'Achat':'Vente'}</span>
+        </div>
+        <span class="hist-date">${formatDateFR(row.date)}</span>
+      </div>
+      <div class="hist-detail">
+        <span>Prix : ${fmt(row.prix)}</span>
+        <span>Qté : ${row.qte}</span>
+        <span>Frais : ${fmt(row.fraisPct)}%</span>
+        ${isAchat ? `<span>PRU après : ${fmt(row.pruApres)}</span>` :
+          `<span>Coût revient : ${fmt(row.costBasis)}</span><span>+/- nette : ${fmt(row.gainNet)}</span><span>% : ${fmtPct(row.pctPerf)}</span>`}
+      </div>
+      <div class="hist-actions">
+        <button class="btn btn-outline btn-sm" onclick="editTxn('${row.id}')">Modifier</button>
+        <button class="btn btn-outline btn-sm" onclick="deleteTxn('${row.id}')" style="color:var(--red)">Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   EXCEL IMPORT / EXPORT (format HistoriK)
+============================================================ */
+let pendingImport = null;
+
+function handleExcelFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const historikSheet = wb.Sheets['HistoriK'];
+      const latentSheet = wb.Sheets['Détail Latent'];
+      if(!historikSheet){
+        showToast('Feuille "HistoriK" introuvable dans le fichier');
+        return;
+      }
+      const rows = XLSX.utils.sheet_to_json(historikSheet, {defval:''});
+      const newTransactions = [];
+      rows.forEach((row, idx)=>{
+        const type = String(row['TRANSACTIONS']||'').toLowerCase();
+        if(!row['VALEUR']) return;
+        const dateStr = parseAnyDate(row['DATE']);
+        if(type.includes('achat')){
+          const brut = parseFloat(row['BRUT ACHAT'])||0;
+          const qte = parseFloat(row['QTE'])||0;
+          const prix = parseFloat(row['PRIX']) || (qte>0 ? brut/qte : 0);
+          const frHT = parseFloat(row['FR ACHAT HT'])||0;
+          const fraisPct = (brut>0) ? Math.round(frHT/brut*100*100)/100 : 0.1;
+          newTransactions.push({ id:uid(), seq:idx, date:dateStr, type:'achat',
+            valeur:String(row['VALEUR']), prix, qte, fraisPct: fraisPct||0.1 });
+        } else if(type.includes('vente')){
+          const brut = parseFloat(row['BRUT VENTE'])||0;
+          const qte = parseFloat(row['QTE'])||0;
+          const prix = parseFloat(row['PRIX']) || (qte>0 ? brut/qte : 0);
+          const frHT = parseFloat(row['FR VENTE HT'])||0;
+          const fraisPct = (brut>0) ? Math.round(frHT/brut*100*100)/100 : 0.1;
+          newTransactions.push({ id:uid(), seq:idx, date:dateStr, type:'vente',
+            valeur:String(row['VALEUR']), prix, qte, fraisPct: fraisPct||0.1 });
+        }
+      });
+
+      const newCours = {};
+      let nbCours = 0;
+      if(latentSheet){
+        const latRows = XLSX.utils.sheet_to_json(latentSheet, {defval:''});
+        latRows.forEach(row=>{
+          const v = row['VALEUR'];
+          const c = row['COURS JOUR'];
+          if(v && c !== '' && !isNaN(parseFloat(c))){
+            newCours[String(v)] = parseFloat(c);
+            nbCours++;
+          }
+        });
+      }
+
+      pendingImport = { transactions:newTransactions, coursJour:newCours };
+      document.getElementById('excel-confirm').innerHTML = `
+        <div class="confirm-panel">
+          <h3>Confirmer l'import</h3>
+          <div class="line"><span>Transactions trouvées</span><b>${newTransactions.length}</b></div>
+          <div class="line"><span>Cours du jour trouvés</span><b>${nbCours}</b></div>
+          <div class="line" style="color:var(--red)"><span>⚠ Remplacera les données actuelles</span></div>
+          <div class="confirm-actions">
+            <button class="btn btn-gold" onclick="confirmImport()">Confirmer</button>
+            <button class="btn btn-outline" onclick="cancelImport()">Annuler</button>
+          </div>
+        </div>`;
+    }catch(err){
+      showToast('Erreur de lecture du fichier');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function confirmImport(){
+  if(!pendingImport) return;
+  state.transactions = pendingImport.transactions;
+  state.coursJour = pendingImport.coursJour;
+  saveState();
+  pendingImport = null;
+  document.getElementById('excel-confirm').innerHTML = '';
+  document.getElementById('excel-file-input').value = '';
+  refreshValeursDatalist();
+  showToast('Import terminé');
+  goTab('accueil');
+}
+function cancelImport(){
+  pendingImport = null;
+  document.getElementById('excel-confirm').innerHTML = '';
+  document.getElementById('excel-file-input').value = '';
+}
+
+function exportExcel(){
+  const r = replay();
+  const historikData = r.rows.map(row=>({
+    'DATE': row.date,
+    'TRANSACTIONS': row.type==='achat' ? 'Achat' : 'Vente',
+    'VALEUR': row.valeur,
+    'PRIX': round2(row.prix),
+    'QTE': row.qte,
+    'BRUT ACHAT': row.type==='achat' ? round2(row.brutAchat) : '',
+    'FR ACHAT HT': row.type==='achat' ? round2(row.frAchatHT) : '',
+    'TVA FR ACHAT HT': row.type==='achat' ? round2(row.tvaFrAchatHT) : '',
+    'FR ACHAT TTC': row.type==='achat' ? round2(row.frAchatTTC) : '',
+    'FR VENTE HT': row.type==='vente' ? round2(row.frVenteHT) : '',
+    'TVA FR VENTE': row.type==='vente' ? round2(row.tvaFrVente) : '',
+    'FR VENTE TTC': row.type==='vente' ? round2(row.frVenteTTC) : '',
+    'TAXE 15%': row.type==='vente' ? round2(row.taxe15) : '',
+    'BRUT VENTE': row.type==='vente' ? round2(row.brutVente) : '',
+    'NET RÉALISÉ': row.type==='vente' ? round2(row.gainNet) : '',
+    '% +/- VALUE RÉALISÉE': row.type==='vente' ? round2(row.pctPerf) : '',
+  }));
+
+  const feePct = parseFloat(document.getElementById('lat-frais')?.value) || 0.1;
+  const { items } = computeLatente(feePct);
+  const latenteByValeur = {};
+  items.forEach(it=>{ latenteByValeur[it.valeur] = it; });
+
+  const toutesValeurs = allValeursConnues();
+  const latentData = toutesValeurs.map(v=>{
+    const it = latenteByValeur[v] || { valeur:v, qty:0, pru:0, valAchat:0, cours:null, valMarche:null, fraisTTCest:null, taxe15est:null, brute:null, nette:null };
+    const ventesV = r.rows.filter(row=>row.valeur===v && row.type==='vente');
+    const netRealise = ventesV.reduce((s,row)=>s+row.gainNet,0);
+    const costBasisV = ventesV.reduce((s,row)=>s+row.costBasis,0);
+    const pctRealise = costBasisV>0 ? (netRealise/costBasisV*100) : '';
+    return {
+      'VALEUR': it.valeur,
+      'QUANTITÉ': it.qty,
+      'PRU': round2(it.pru),
+      'VAL. ACHAT': round2(it.valAchat),
+      'COURS JOUR': it.cours!==null ? round2(it.cours) : '',
+      'VAL. MARCHÉ': it.valMarche!==null ? round2(it.valMarche) : '',
+      'FRAIS TTC EST.': it.fraisTTCest!==null ? round2(it.fraisTTCest) : '',
+      'TAXE 15% EST.': it.taxe15est!==null ? round2(it.taxe15est) : '',
+      '+/- BRUTE': it.brute!==null ? round2(it.brute) : '',
+      '+/- NETTE LATENTE': it.nette!==null ? round2(it.nette) : '',
+      'NET RÉALISÉ': ventesV.length>0 ? round2(netRealise) : '',
+      '% +/- VALUE RÉALISÉE': pctRealise!=='' ? round2(pctRealise) : '',
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet(historikData);
+  const ws2 = XLSX.utils.json_to_sheet(latentData);
+  XLSX.utils.book_append_sheet(wb, ws1, 'HistoriK');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Détail Latent');
+
+  downloadWorkbook(wb, 'BOURSSATY_' + todayStr() + '.xlsx');
+  showToast('Export généré');
+}
+
+/* ============================================================
+   INVESTISSEMENT — injection / retrait de fonds
+============================================================ */
+function computeFonds(){
+  const r = replay();
+  const totalApports = state.fonds.filter(f=>f.type==='apport').reduce((s,f)=>s+f.montant,0);
+  const totalRetraits = state.fonds.filter(f=>f.type==='retrait').reduce((s,f)=>s+f.montant,0);
+  const netInvesti = totalApports - totalRetraits;
+  const soldeDisponible = totalApports - totalRetraits - r.totalDecaisse + r.totalEncaisse;
+  return { totalApports, totalRetraits, netInvesti, soldeDisponible, totalDecaisse:r.totalDecaisse, totalEncaisse:r.totalEncaisse };
+}
+function renderInvestissement(){
+  const f = computeFonds();
+  document.getElementById('inv-injecte').textContent = fmt(f.totalApports);
+  document.getElementById('inv-retire').textContent = fmt(f.totalRetraits);
+  document.getElementById('inv-global').textContent = fmt(f.netInvesti);
+  document.getElementById('inv-global').className = 'card-value ' + (f.netInvesti>=0?'pos':'neg');
+  document.getElementById('inv-decaisse').textContent = fmt(f.totalDecaisse);
+  document.getElementById('inv-encaisse').textContent = fmt(f.totalEncaisse);
+  document.getElementById('inv-solde').textContent = fmt(f.soldeDisponible);
+  document.getElementById('inv-solde').className = 'card-value ' + (f.soldeDisponible>=0?'pos':'neg');
+
+  const el = document.getElementById('inv-list');
+  if(state.fonds.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">💵</div>Aucun mouvement enregistré</div>';
+    return;
+  }
+  const sorted = [...state.fonds].sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
+  el.innerHTML = sorted.map(m=>{
+    const isApport = m.type==='apport';
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-left">
+          <span class="badge ${isApport?'achat':'vente'}">${isApport?'Injection':'Retrait'}</span>
+          <span class="hist-valeur">${fmt(m.montant)}</span>
+        </div>
+        <span class="hist-date">${formatDateFR(m.date)}</span>
+      </div>
+      ${m.note ? `<div class="hist-detail"><span>${escapeHtml(m.note)}</span></div>` : ''}
+      <div class="hist-actions">
+        <button class="btn btn-outline btn-sm" onclick="deleteMouvementFonds('${m.id}')" style="color:var(--red)">Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function confirmerMouvementFonds(){
+  const type = document.getElementById('inv-type').value;
+  const montant = parseFloat(document.getElementById('inv-montant').value);
+  const date = document.getElementById('inv-date').value || todayStr();
+  const note = document.getElementById('inv-note').value.trim();
+  if(!montant || montant<=0){ showToast('Veuillez saisir un montant valide'); return; }
+  state.fonds.push({ id: uid(), date, type, montant, note });
+  saveState();
+  document.getElementById('inv-montant').value='';
+  document.getElementById('inv-note').value='';
+  document.getElementById('inv-date').value='';
+  showToast(type==='apport' ? 'Injection enregistrée' : 'Retrait enregistré');
+  renderInvestissement();
+}
+function deleteMouvementFonds(id){
+  if(!confirm('Supprimer ce mouvement ?')) return;
+  state.fonds = state.fonds.filter(f=>f.id!==id);
+  saveState();
+  renderInvestissement();
+}
+
+function downloadWorkbook(wb, filename){
+  const base64 = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+  const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64;
+  const a = document.createElement('a');
+  a.href = dataUri;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function parseAnyDate(val){
+  if(val instanceof Date){
+    return val.toISOString().slice(0,10);
+  } else if(typeof val === 'number'){
+    const d = XLSX.SSF.parse_date_code(val);
+    return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  } else if(typeof val === 'string' && val.trim()!==''){
+    return val.trim();
+  }
+  return todayStr();
+}
+function round2(n){
+  if(n===null||n===undefined||isNaN(n)) return 0;
+  return Math.round(n*100)/100;
+}
+
+/* ============================================================
+   UTILS
+============================================================ */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function jsEsc(str){
+  return String(str).replace(/'/g, "\\'");
+}
+
+/* ============================================================
+   MASTER RENDER
+============================================================ */
+function renderAll(activeTab){
+  renderAccueil();
+  refreshValeursDatalist();
+  if(activeTab==='positions') renderPositions();
+  if(activeTab==='vente') renderVenteForm();
+  if(activeTab==='latente') renderLatente();
+  if(activeTab==='historique') renderHistorique();
+  if(activeTab==='detailvaleur') renderDetailValeur();
+  if(activeTab==='investissement') renderInvestissement();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+loadState();
+document.getElementById('ac-date').value = todayStr();
+document.getElementById('ve-date').value = todayStr();
+document.getElementById('inv-date').value = todayStr();
+renderAll('accueil');
+</script>
+</body>
+</html>
