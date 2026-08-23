@@ -51,7 +51,8 @@
   .card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);
     padding:18px;margin-bottom:12px;text-align:center;box-shadow:0 2px 0 var(--border);}
   .card-label{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:700;margin-bottom:8px;text-align:center;}
-  .card-value{font-size:25px;font-weight:800;letter-spacing:-0.01em;text-align:center;}
+  .card-value{font-size:clamp(16px, 5.2vw, 25px);font-weight:800;letter-spacing:-0.01em;text-align:center;
+    overflow-wrap:break-word;word-break:break-word;}
   .card-sub{font-size:13px;color:var(--text-dim);margin-top:4px;text-align:center;}
   .card-value.pos{color:var(--green);}
   .card-value.neg{color:var(--red);}
@@ -60,7 +61,7 @@
   .hero-result{background:linear-gradient(180deg,#FFF7E6,#FFFFFF);
     border:2px solid var(--gold-dim);border-radius:22px;padding:26px 20px;margin-bottom:14px;text-align:center;}
   .hero-result .card-label{color:var(--gold);}
-  .hero-result .card-value{font-size:34px;}
+  .hero-result .card-value{font-size:clamp(20px, 7vw, 34px);overflow-wrap:break-word;word-break:break-word;}
 
   /* ---- Nav grid (Accueil) ---- */
   .nav-title{font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);
@@ -71,6 +72,20 @@
     color:var(--text);font-size:14px;font-weight:800;cursor:pointer;text-align:center;box-shadow:0 2px 0 var(--border);}
   .nav-btn:active{background:var(--surface2);}
   .nav-btn .ic{font-size:24px;}
+
+  .valeur-btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .valeur-btn{padding:14px 8px;background:var(--surface);border:2px solid var(--border);border-radius:12px;
+    color:var(--text);font-size:14px;font-weight:800;cursor:pointer;text-align:center;font-family:inherit;}
+  .valeur-btn.selected{background:var(--gold-dim);border-color:var(--gold);color:#3A2A00;}
+  .valeur-btn:active{opacity:.85;}
+
+  .menu-overlay{display:none;position:fixed;inset:0;background:rgba(58,51,31,0.45);z-index:80;
+    align-items:flex-end;justify-content:center;}
+  .menu-overlay.show{display:flex;}
+  .menu-panel{width:100%;max-width:560px;background:var(--bg);border-radius:24px 24px 0 0;
+    padding:14px 20px calc(20px + var(--safe-b));box-shadow:0 -6px 24px rgba(0,0,0,0.2);
+    max-height:80vh;overflow-y:auto;}
+  .menu-panel-handle{width:44px;height:5px;background:var(--border);border-radius:4px;margin:6px auto 14px;}
 
   /* ---- Buttons ---- */
   .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:var(--radius-sm);
@@ -192,7 +207,7 @@
 
     <div class="grid2">
       <div class="card">
-        <div class="card-label">Coût positions ouvertes</div>
+        <div class="card-label">Total valeur</div>
         <div class="card-value" id="acc-cout">0,00</div>
       </div>
       <div class="card">
@@ -210,24 +225,39 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-label">Plus/moins-value latente totale</div>
-      <div class="card-value" id="acc-latente">0,00</div>
-      <div class="card-sub" id="acc-latente-sub">Valeurs avec cours du jour renseigné</div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-label">Valeur marché</div>
+        <div class="card-value" id="acc-valmarche">0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Plus/moins-value latente totale</div>
+        <div class="card-value" id="acc-latente">0,00</div>
+        <div class="card-sub" id="acc-latente-sub">Valeurs avec cours du jour renseigné</div>
+      </div>
     </div>
 
-    <div class="nav-title">Menu</div>
-    <div class="nav-grid">
-      <div class="nav-btn" onclick="goTab('vente')"><span class="ic">💰</span>Vente</div>
-      <div class="nav-btn" onclick="goTab('achat')"><span class="ic">🛒</span>Achat</div>
-      <div class="nav-btn" onclick="goTab('positions')"><span class="ic">📊</span>Positions</div>
-      <div class="nav-btn" onclick="goTab('latente')"><span class="ic">📈</span>Latente</div>
-      <div class="nav-btn" onclick="goTab('historique')"><span class="ic">🕘</span>Historique</div>
-      <div class="nav-btn" onclick="goTab('detailvaleur')"><span class="ic">🔎</span>Détail par valeur</div>
-      <div class="nav-btn" onclick="goTab('excel')"><span class="ic">📑</span>Excel</div>
-      <div class="nav-btn" onclick="goTab('investissement')"><span class="ic">💵</span>Investissement</div>
-    </div>
+    <button class="btn btn-gold" onclick="openMenu()" style="margin-top:8px;">☰ Menu</button>
   </section>
+
+  <!-- ===================== MENU OVERLAY ===================== -->
+  <div class="menu-overlay" id="menu-overlay" onclick="closeMenuBackdrop(event)">
+    <div class="menu-panel">
+      <div class="menu-panel-handle"></div>
+      <div class="nav-title">Menu</div>
+      <div class="nav-grid">
+        <div class="nav-btn" onclick="closeMenuAndGo('vente')"><span class="ic">💰</span>Vente</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('achat')"><span class="ic">🛒</span>Achat</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('positions')"><span class="ic">📊</span>Positions</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('latente')"><span class="ic">📈</span>Latente</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('historique')"><span class="ic">🕘</span>Historique</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('detailvaleur')"><span class="ic">🔎</span>Détail par valeur</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('excel')"><span class="ic">📑</span>Excel</div>
+        <div class="nav-btn" onclick="closeMenuAndGo('investissement')"><span class="ic">💵</span>Investissement</div>
+      </div>
+      <button class="btn btn-outline" onclick="closeMenu()" style="margin-top:14px;">Fermer</button>
+    </div>
+  </div>
 
   <!-- ===================== POSITIONS ===================== -->
   <section class="tab" id="tab-positions" data-tab="positions">
@@ -241,7 +271,7 @@
 
     <div class="field">
       <label for="ac-valeur">Nom de l'action</label>
-      <input type="text" id="ac-valeur" list="valeurs-list" placeholder="Ex: INVOLYS" oninput="simulateAchat()" autocomplete="off">
+      <input type="text" id="ac-valeur" list="valeurs-list" placeholder="Nom de l'action" oninput="simulateAchat()" autocomplete="off">
       <datalist id="valeurs-list"></datalist>
     </div>
     <div class="row2">
@@ -275,8 +305,8 @@
     <div class="sec-header"><h2>Vente</h2><p>Nouvelle transaction de vente</p></div>
 
     <div class="field">
-      <label for="ve-valeur">Valeur détenue</label>
-      <select id="ve-valeur" onchange="onVenteValeurChange()"></select>
+      <label>Valeur détenue</label>
+      <div class="valeur-btn-grid" id="ve-valeur-btns"></div>
     </div>
     <div class="card" id="ve-position-info" style="display:none;"></div>
 
@@ -347,6 +377,7 @@
     </div>
     <button class="btn btn-outline btn-sm" onclick="resetFiltresHistorique()" style="margin-bottom:16px;">Réinitialiser les filtres</button>
 
+    <div id="hist-filter-summary"></div>
     <div id="historique-list"></div>
   </section>
 
@@ -354,8 +385,8 @@
   <section class="tab" id="tab-detailvaleur" data-tab="detailvaleur">
     <div class="sec-header"><h2>Détail par valeur</h2><p>Historique et suivi valeur par valeur</p></div>
     <div class="field">
-      <label for="dv-select">Choisir une valeur</label>
-      <select id="dv-select" onchange="renderDetailValeur()"></select>
+      <label>Choisir une valeur</label>
+      <div class="valeur-btn-grid" id="dv-valeur-btns"></div>
     </div>
     <div id="dv-summary-wrap"></div>
     <div id="dv-list"></div>
@@ -598,6 +629,19 @@ function goTab(name){
   renderAll(name);
   window.scrollTo(0,0);
 }
+function openMenu(){
+  document.getElementById('menu-overlay').classList.add('show');
+}
+function closeMenu(){
+  document.getElementById('menu-overlay').classList.remove('show');
+}
+function closeMenuBackdrop(evt){
+  if(evt.target.id === 'menu-overlay') closeMenu();
+}
+function closeMenuAndGo(name){
+  closeMenu();
+  goTab(name);
+}
 function renderFabs(name){
   document.querySelectorAll('.fab').forEach(f=>f.remove());
   if(name !== 'accueil'){
@@ -631,6 +675,8 @@ function renderAccueil(){
   document.getElementById('acc-perf').textContent = fmtPct(r.perfPct);
   document.getElementById('acc-encaisse').textContent = fmt(r.totalEncaisse);
   document.getElementById('acc-decaisse').textContent = fmt(r.totalDecaisse);
+  const totalValMarche = items.reduce((s,it)=> s + (it.valMarche!==null ? it.valMarche : 0), 0);
+  document.getElementById('acc-valmarche').textContent = fmt(totalValMarche);
   document.getElementById('acc-latente').textContent = fmt(totalNette);
   document.getElementById('acc-latente').className = 'card-value ' + (totalNette>=0?'pos':'neg');
   const nbCours = items.filter(i=>i.cours!==null).length;
@@ -745,24 +791,33 @@ function confirmerAchat(){
 /* ============================================================
    RENDER: VENTE
 ============================================================ */
+let selectedVenteValeur = null;
 function renderVenteForm(){
   const { perValeur } = replay();
-  const sel = document.getElementById('ve-valeur');
+  const btnsEl = document.getElementById('ve-valeur-btns');
   const valeurs = Object.keys(perValeur).sort();
   if(valeurs.length===0){
-    sel.innerHTML = '<option value="">Aucune position ouverte</option>';
+    btnsEl.innerHTML = '<div class="lat-empty-note">Aucune position ouverte</div>';
     document.getElementById('ve-position-info').style.display='none';
     document.getElementById('ve-sim').style.display='none';
+    selectedVenteValeur = null;
     return;
   }
-  const prevVal = sel.value;
-  sel.innerHTML = valeurs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-  if(valeurs.includes(prevVal)) sel.value = prevVal;
+  if(!selectedVenteValeur || !valeurs.includes(selectedVenteValeur)){
+    selectedVenteValeur = valeurs[0];
+  }
+  btnsEl.innerHTML = valeurs.map(v=>
+    `<div class="valeur-btn${v===selectedVenteValeur?' selected':''}" onclick="selectVenteValeur('${jsEsc(v)}')">${escapeHtml(v)}</div>`
+  ).join('');
   onVenteValeurChange();
+}
+function selectVenteValeur(v){
+  selectedVenteValeur = v;
+  renderVenteForm();
 }
 function onVenteValeurChange(){
   const { perValeur } = replay();
-  const v = document.getElementById('ve-valeur').value;
+  const v = selectedVenteValeur;
   const info = document.getElementById('ve-position-info');
   if(!v || !perValeur[v]){ info.style.display='none'; return; }
   const p = perValeur[v];
@@ -773,7 +828,7 @@ function onVenteValeurChange(){
 }
 function simulateVente(){
   const { perValeur } = replay();
-  const v = document.getElementById('ve-valeur').value;
+  const v = selectedVenteValeur;
   const prix = parseFloat(document.getElementById('ve-prix').value);
   const qte = parseFloat(document.getElementById('ve-qte').value);
   const fraisPct = parseFloat(document.getElementById('ve-frais').value);
@@ -810,7 +865,7 @@ function simulateVente(){
 }
 function confirmerVente(){
   const { perValeur } = replay();
-  const valeur = document.getElementById('ve-valeur').value;
+  const valeur = selectedVenteValeur;
   const prix = parseFloat(document.getElementById('ve-prix').value);
   const qte = parseFloat(document.getElementById('ve-qte').value);
   const fraisPct = parseFloat(document.getElementById('ve-frais').value);
@@ -830,6 +885,7 @@ function confirmerVente(){
   document.getElementById('ve-frais').value='0.1';
   document.getElementById('ve-sim').style.display='none';
   document.getElementById('ve-date').value='';
+  selectedVenteValeur = null;
   showToast('Vente enregistrée');
   goTab('positions');
 }
@@ -916,6 +972,20 @@ function renderHistorique(){
   if(fDebut) rows = rows.filter(row=>row.date >= fDebut);
   if(fFin) rows = rows.filter(row=>row.date <= fFin);
 
+  const summaryEl = document.getElementById('hist-filter-summary');
+  const ventesFiltrees = rows.filter(row=>row.type==='vente');
+  const hasFilter = fType || fValeur || fDebut || fFin;
+  if(ventesFiltrees.length>0){
+    const totalNetFiltre = ventesFiltrees.reduce((s,row)=>s+row.gainNet,0);
+    summaryEl.innerHTML = `<div class="card">
+      <div class="card-label">${hasFilter ? 'Total net réalisé (sélection filtrée)' : 'Total net réalisé'}</div>
+      <div class="card-value ${totalNetFiltre>=0?'pos':'neg'}">${fmt(totalNetFiltre)}</div>
+      <div class="card-sub">${ventesFiltrees.length} vente(s)</div>
+    </div>`;
+  } else {
+    summaryEl.innerHTML = '';
+  }
+
   if(rows.length===0){
     el.innerHTML = '<div class="empty-state"><div class="ic">🕘</div>Aucune transaction</div>';
     return;
@@ -934,8 +1004,8 @@ function renderHistorique(){
       <div class="hist-detail">
         <span>Prix : ${fmt(row.prix)}</span>
         <span>Qté : ${row.qte}</span>
-        <span>Frais : ${fmt(row.fraisPct)}%</span>
-        ${isAchat ? `<span>Frais TTC : ${fmt(row.frAchatTTC)}</span>` :
+        <span>Frais : ${fmt(isAchat ? row.frAchatTTC : row.frVenteTTC)}</span>
+        ${isAchat ? '' :
           `<span>Taxe 15% : ${fmt(row.taxe15)}</span><span>Gain net : ${fmt(row.gainNet)}</span><span>% : ${fmtPct(row.pctPerf)}</span>`}
       </div>
       <div class="hist-actions">
@@ -986,20 +1056,29 @@ function currentTabName(){
 /* ============================================================
    RENDER: DÉTAIL PAR VALEUR
 ============================================================ */
+let selectedDetailValeur = null;
 function renderDetailValeurSelect(){
-  const sel = document.getElementById('dv-select');
+  const btnsEl = document.getElementById('dv-valeur-btns');
   const valeurs = allValeursConnues();
-  const prevVal = sel.value;
   if(valeurs.length===0){
-    sel.innerHTML = '<option value="">Aucune valeur</option>';
+    btnsEl.innerHTML = '<div class="lat-empty-note">Aucune valeur</div>';
+    selectedDetailValeur = null;
     return;
   }
-  sel.innerHTML = valeurs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-  if(valeurs.includes(prevVal)) sel.value = prevVal;
+  if(!selectedDetailValeur || !valeurs.includes(selectedDetailValeur)){
+    selectedDetailValeur = valeurs[0];
+  }
+  btnsEl.innerHTML = valeurs.map(v=>
+    `<div class="valeur-btn${v===selectedDetailValeur?' selected':''}" onclick="selectDetailValeur('${jsEsc(v)}')">${escapeHtml(v)}</div>`
+  ).join('');
+}
+function selectDetailValeur(v){
+  selectedDetailValeur = v;
+  renderDetailValeur();
 }
 function renderDetailValeur(){
   renderDetailValeurSelect();
-  const v = document.getElementById('dv-select').value;
+  const v = selectedDetailValeur;
   const summaryWrap = document.getElementById('dv-summary-wrap');
   const listEl = document.getElementById('dv-list');
   if(!v){
@@ -1042,7 +1121,7 @@ function renderDetailValeur(){
       <div class="hist-detail">
         <span>Prix : ${fmt(row.prix)}</span>
         <span>Qté : ${row.qte}</span>
-        <span>Frais : ${fmt(row.fraisPct)}%</span>
+        <span>Frais : ${fmt(isAchat ? row.frAchatTTC : row.frVenteTTC)}</span>
         ${isAchat ? `<span>PRU après : ${fmt(row.pruApres)}</span>` :
           `<span>Coût revient : ${fmt(row.costBasis)}</span><span>+/- nette : ${fmt(row.gainNet)}</span><span>% : ${fmtPct(row.pctPerf)}</span>`}
       </div>
